@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Diagnostic Stats</title>
+<style>
+body{font-family:monospace;background:#001;color:#0f0;padding:20px;font-size:12px}
+.ok{color:#0f0}.err{color:#f44}.warn{color:#fa0}
+pre{background:#002;padding:8px;border-radius:4px;overflow:auto;max-height:250px;font-size:10px}
+button{background:#0a3;color:#fff;border:none;padding:6px 14px;border-radius:5px;cursor:pointer;margin:3px}
+h3{color:#fa0;margin:14px 0 6px}
+.log{background:#002;padding:6px 10px;border-radius:4px;margin:3px 0}
+</style></head>
+<body>
+<h2>🔧 Diagnostic API depuis GitHub Pages</h2>
+<p>Ce fichier est hébergé sur ton site — les CORS ne bloquent plus !</p>
+
+<h3>Test 1 — Clé RapidAPI valide ?</h3>
+<button onclick="t1()">▶ Status compte</button>
+<div id="r1"></div>
+
+<h3>Test 2 — Derniers matchs France (ID=2)</h3>
+<button onclick="t2()">▶ Matchs France</button>
+<div id="r2"></div>
+
+<h3>Test 3 — Stats amicaux France (league=10, saison=2025)</h3>
+<button onclick="t3()">▶ Stats amicaux</button>
+<div id="r3"></div>
+
+<h3>Test 4 — Joueurs France amicaux</h3>
+<button onclick="t4()">▶ Joueurs</button>
+<div id="r4"></div>
+
+<h3>Test 5 — Chercher équipe "France"</h3>
+<button onclick="t5()">▶ Search France</button>
+<div id="r5"></div>
+
+<h3>Test libre</h3>
+<input id="u" style="background:#002;color:#0f0;border:1px solid #0a3;padding:5px;width:85%;font-size:11px" 
+  value="/fixtures?team=2&last=5">
+<button onclick="tl()">▶ Go</button>
+<div id="r6"></div>
+
+<script>
+const K='c363c820b2msh910e56cf436a16ep1e0114jsnc645d7187625';
+const B='https://api-football-v1.p.rapidapi.com/v3';
+async function api(path,div){
+  const el=document.getElementById(div);
+  el.innerHTML='<div class="log warn">⏳ En cours…</div>';
+  try{
+    const r=await fetch(B+path,{headers:{'X-RapidAPI-Key':K,'X-RapidAPI-Host':'api-football-v1.p.rapidapi.com'}});
+    const txt=await r.text();
+    let d;try{d=JSON.parse(txt);}catch(e){d=txt;}
+    const rem=r.headers.get('x-ratelimit-requests-remaining')||'?';
+    const lim=r.headers.get('x-ratelimit-requests-limit')||'?';
+    el.innerHTML=`
+<div class="log ${r.ok?'ok':'err'}">HTTP ${r.status} ${r.ok?'✅ OK':'❌ ERREUR'} — Quota: ${rem}/${lim}</div>
+${d?.errors?`<div class="log err">Erreurs: ${JSON.stringify(d.errors)}</div>`:''}
+${d?.response!==undefined?`<div class="log ok">✓ ${Array.isArray(d.response)?d.response.length+' résultats':typeof d.response}</div>`:''}
+<pre>${JSON.stringify(d,null,2).slice(0,2000)}</pre>`;
+  }catch(e){document.getElementById(div).innerHTML=`<div class="log err">❌ CORS ou réseau: ${e.message}</div>`;}
+}
+function t1(){api('/status','r1');}
+function t2(){api('/fixtures?team=2&last=5&status=FT','r2');}
+function t3(){api('/teams/statistics?team=2&league=10&season=2025','r3');}
+function t4(){api('/players?team=2&league=10&season=2025','r4');}
+function t5(){api('/teams?search=France','r5');}
+function tl(){api(document.getElementById('u').value,'r6');}
+</script>
+</body></html>
