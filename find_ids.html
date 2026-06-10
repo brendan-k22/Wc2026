@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Find Team IDs</title>
+<style>
+body{font-family:monospace;background:#001;color:#0f0;padding:20px;font-size:12px}
+.ok{color:#0f0}.err{color:#f44}.warn{color:#fa0}
+pre{background:#002;padding:8px;border-radius:4px;overflow:auto;max-height:400px;font-size:10px}
+button{background:#0a3;color:#fff;border:none;padding:6px 14px;border-radius:5px;cursor:pointer;margin:3px}
+h3{color:#fa0;margin:14px 0 6px}
+.log{background:#002;padding:6px 10px;border-radius:4px;margin:3px 0}
+</style></head>
+<body>
+<h2>🔍 Trouver les vrais IDs des équipes</h2>
+
+<h3>Test 1 — Équipes WC 2026</h3>
+<button onclick="go('/v4/competitions/WC/teams?season=2026','r1')">▶ Équipes WC</button>
+<div id="r1"></div>
+
+<h3>Test 2 — Matchs récents France</h3>
+<button onclick="go('/v4/teams/773/matches?limit=5&status=FINISHED','r2')">▶ France ID=773</button>
+<button onclick="go('/v4/teams/2/matches?limit=5&status=FINISHED','r2b')">▶ France ID=2</button>
+<div id="r2"></div><div id="r2b"></div>
+
+<h3>Test 3 — Chercher France</h3>
+<button onclick="go('/v4/teams?name=France','r3')">▶ Search France</button>
+<div id="r3"></div>
+
+<h3>Test 4 — Compétitions disponibles</h3>
+<button onclick="go('/v4/competitions','r4')">▶ Competitions</button>
+<div id="r4"></div>
+
+<h3>Test 5 — Matchs d'un team (saisir ID)</h3>
+<input id="tid" value="773" style="background:#002;color:#0f0;border:1px solid #0a3;padding:4px;width:80px">
+<button onclick="go('/v4/teams/'+document.getElementById('tid').value+'/matches?limit=5&status=FINISHED','r5')">▶ Test</button>
+<div id="r5"></div>
+
+<h3>Test libre</h3>
+<input id="u" value="/v4/teams/773" style="background:#002;color:#0f0;border:1px solid #0a3;padding:4px;width:300px">
+<button onclick="go(document.getElementById('u').value,'r6')">▶ Go</button>
+<div id="r6"></div>
+
+<script>
+const KEY='aebb66d66d4f4b2db340077b7524955e';
+const BASE='https://api.football-data.org';
+async function go(path,div){
+  const el=document.getElementById(div);
+  el.innerHTML='<div class="log warn">⏳…</div>';
+  try{
+    const r=await fetch(BASE+path,{headers:{'X-Auth-Token':KEY}});
+    const txt=await r.text();
+    let d;try{d=JSON.parse(txt);}catch(e){d=txt;}
+    
+    // Extraire les IDs des équipes si présent
+    let teamInfo='';
+    if(d?.teams) teamInfo=`<div class="log ok">Teams: ${d.teams.map(t=>`${t.id}=${t.name}`).join(', ')}</div>`;
+    if(d?.matches) teamInfo=`<div class="log ok">Matches: ${d.matches.length} trouvés. Premier: ${JSON.stringify(d.matches[0]?.homeTeam)} vs ${JSON.stringify(d.matches[0]?.awayTeam)}</div>`;
+    
+    el.innerHTML=`
+<div class="log ${r.ok?'ok':'err'}">HTTP ${r.status} ${r.ok?'✅':'❌'}</div>
+${teamInfo}
+<pre>${JSON.stringify(d,null,2).slice(0,3000)}</pre>`;
+  }catch(e){document.getElementById(div).innerHTML=`<div class="log err">❌ ${e.message}</div>`;}
+}
+</script>
+</body></html>
